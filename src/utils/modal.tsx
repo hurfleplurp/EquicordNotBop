@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { filters, findByCodeLazy, mapMangledModuleLazy } from "@webpack";
+import { filters, findByCodeLazy, findComponentByCodeLazy, mapMangledModuleLazy } from "@webpack";
 import type { ComponentType, PropsWithChildren, ReactNode, Ref } from "react";
 
 import { LazyComponent } from "./react";
@@ -104,9 +104,9 @@ interface Modals {
 export const Modals: Modals = mapMangledModuleLazy(':"thin")', {
     ModalRoot: filters.componentByCode('.MODAL,"aria-labelledby":'),
     ModalHeader: filters.componentByCode(",id:"),
-    ModalContent: filters.componentByCode(".content,"),
-    ModalFooter: filters.componentByCode(".footer,"),
-    ModalCloseButton: filters.componentByCode(".close]:")
+    ModalContent: filters.componentByCode("scrollbarType:"),
+    ModalFooter: filters.componentByCode(".HORIZONTAL_REVERSE,"),
+    ModalCloseButton: filters.componentByCode(".withCircleBackground")
 });
 
 export const ModalRoot = LazyComponent(() => Modals.ModalRoot);
@@ -114,6 +114,7 @@ export const ModalHeader = LazyComponent(() => Modals.ModalHeader);
 export const ModalContent = LazyComponent(() => Modals.ModalContent);
 export const ModalFooter = LazyComponent(() => Modals.ModalFooter);
 export const ModalCloseButton = LazyComponent(() => Modals.ModalCloseButton);
+export const CloseButton = findComponentByCodeLazy("CLOSE_BUTTON_LABEL");
 
 export type MediaModalItem = {
     url: string;

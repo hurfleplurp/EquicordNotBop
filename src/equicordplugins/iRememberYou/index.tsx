@@ -7,23 +7,41 @@
 import "./styles.css";
 
 import { addMessagePreSendListener, removeMessagePreSendListener } from "@api/MessageEvents";
-import settings from "@plugins/_core/settings";
+import { EyeIcon } from "@components/Icons";
+import SettingsPlugin, { settingsSectionMap } from "@plugins/_core/settings";
 import { EquicordDevs } from "@utils/constants";
 import definePlugin from "@utils/types";
-import { React, } from "@webpack/common";
 
 import { Data } from "./components/data";
-import { DataUI } from "./components/ui";
+import DataUI from "./components/ui";
 
 export default definePlugin({
     name: "IRememberYou",
     description: "Locally saves everyone you've been communicating with (including servers), in case of lose",
-    authors: [EquicordDevs.zoodogood],
+    authors: [EquicordDevs.zoodogood, EquicordDevs.keyages],
     dependencies: ["MessageEventsAPI"],
 
     patches: [],
 
     async start() {
+        const { customEntries, customSections } = SettingsPlugin;
+
+        customEntries.push({
+            key: "equicord_i_remember_you",
+            title: "I Remember You",
+            Component: () => <DataUI usersCollection={data.usersCollection} />,
+            Icon: EyeIcon
+        });
+
+        customSections.push(() => ({
+            section: "EquicordIRememberYou",
+            label: "IRememberYou",
+            element: () => <DataUI plugin={this} usersCollection={data.usersCollection} />,
+            id: "EquicordIRememberYou"
+        }));
+
+        settingsSectionMap.push(["EquicordIRememberYou", "equicord_i_remember_you"]);
+
         const data = (this.dataManager = await new Data().withStart());
 
         await data.initializeUsersCollection();
@@ -33,30 +51,17 @@ export default definePlugin({
             data.onMessagePreSend.bind(data)
         );
         data.storageAutoSaveProtocol();
-
-        const customSettingsSections = (
-            settings as any as {
-                customSections: ((ID: Record<string, unknown>) => any)[];
-            }
-        ).customSections;
-
-        customSettingsSections.push(_ => ({
-            section: "iremeberyou.display-data",
-            label: "IRememberYou",
-            id: "IRememberYou",
-            element: () => <DataUI plugin={this} usersCollection={data.usersCollection} />
-        }));
     },
 
     stop() {
         const dataManager = this.dataManager as Data;
-        const customSettingsSections = (
-            Vencord.Plugins.plugins.Settings as any as {
-                customSections: ((ID: Record<string, unknown>) => any)[];
-            }
-        ).customSections;
-        const i = customSettingsSections.findIndex(s => s({}).id === "IRememberYou");
-        if (i !== -1) customSettingsSections.splice(i, 1);
+        const { customEntries, customSections } = SettingsPlugin;
+        const entry = customEntries.findIndex(entry => entry.key === "equicord_i_remember_you");
+        if (entry !== -1) customEntries.splice(entry, 1);
+        const section = customSections.findIndex(section => section({} as any).id === "EquicordIRememberYou");
+        if (section !== -1) customSections.splice(section, 1);
+        const map = settingsSectionMap.findIndex(entry => entry[1] === "equicord_i_remember_you");
+        if (map !== -1) settingsSectionMap.splice(map, 1);
 
         removeMessagePreSendListener(dataManager._onMessagePreSend_preSend);
         clearInterval(dataManager._storageAutoSaveProtocol_interval);

@@ -5,14 +5,12 @@
  */
 
 import { AudioPlayerInterface, createAudioPlayer } from "@api/AudioPlayer";
+import { HeaderBarButton } from "@api/HeaderBar";
 import { definePluginSettings } from "@api/Settings";
 import { EquicordDevs } from "@utils/constants";
 import { ModalProps, ModalRoot, openModal } from "@utils/modal";
 import definePlugin, { OptionType } from "@utils/types";
-import { findComponentByCodeLazy } from "@webpack";
 import { React } from "@webpack/common";
-
-const HeaderBarIcon = findComponentByCodeLazy(".HEADER_BAR_BADGE_TOP:", '.iconBadge,"top"');
 let boopSound: AudioPlayerInterface;
 let song: AudioPlayerInterface;
 
@@ -73,7 +71,7 @@ function buildSoggyModal(): any {
 
 function SoggyButton() {
     return (
-        <HeaderBarIcon
+        <HeaderBarButton
             className="soggy-button"
             tooltip={settings.store.tooltipText}
             icon={() => (
@@ -116,7 +114,7 @@ const settings = definePluginSettings({
     imageLink: {
         description: "URL for the image (button and modal)",
         type: OptionType.STRING,
-        default: "https://images.equicord.org/api/files/raw/0199e730-70d5-7000-a44f-d1acb42064cc",
+        default: "https://equicord.org/assets/plugins/soggy/cat.png",
     },
     songLink: {
         description: "URL for the song to play",
@@ -142,7 +140,20 @@ export default definePlugin({
     authors: [EquicordDevs.sliwka],
     settings,
     dependencies: ["AudioPlayerAPI"],
-    renderHeaderBarButton: SoggyButton,
+
+    headerBarButton: {
+        icon: () => (
+            <img
+                alt=""
+                src={settings.store.imageLink}
+                width={24}
+                height={24}
+                draggable={false}
+                style={{ pointerEvents: "none" }}
+            />
+        ),
+        render: SoggyButton
+    },
 
     start() {
         assignBoop(settings.store.boopLink, settings.store.boopVolume * 100);

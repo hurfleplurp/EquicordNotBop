@@ -7,20 +7,20 @@
 import "./styles.css";
 
 import { NavContextMenuPatchCallback } from "@api/ContextMenu";
+import { HeaderBarButton } from "@api/HeaderBar";
 import ErrorBoundary from "@components/ErrorBoundary";
 import { Devs } from "@utils/constants";
+import { classNameFactory } from "@utils/css";
 import { getCurrentChannel } from "@utils/discord";
 import definePlugin from "@utils/types";
 import { Channel, Guild, User } from "@vencord/discord-types";
 import {
     DefaultExtractAndLoadChunksRegex,
     extractAndLoadChunksLazy,
-    filters,
     findByPropsLazy,
     findComponentByCodeLazy,
-    findLazy,
-    findStoreLazy,
-    mapMangledModuleLazy
+    findCssClassesLazy,
+    findStoreLazy
 } from "@webpack";
 import {
     ChannelRouter,
@@ -46,18 +46,10 @@ import {
 
 import { settings, SidebarStore } from "./store";
 
-// ??? no clue why this HeaderBarIcon doesnt work, its the same as the one below
-const { HeaderBar, /* HeaderBarIcon*/ } = mapMangledModuleLazy(".themedMobile]:", {
-    HeaderBarIcon: filters.componentByCode('size:"custom",'),
-    HeaderBar: filters.byCode(".themedMobile]:"),
-});
+const cl = classNameFactory("vc-sidebar-chat-");
 
-// from toolbox
-const HeaderBarIcon = findComponentByCodeLazy(".HEADER_BAR_BADGE_TOP:", '.iconBadge,"top"');
-
-const { ForumView } = mapMangledModuleLazy("forum-grid-header-section-", {
-    ForumView: filters.byCode("sidebarState")
-});
+const HeaderBar = findComponentByCodeLazy("toolbarClassName:", "}),onDoubleClick:");
+const ForumView = findComponentByCodeLazy("sidebarState");
 
 const ArrowsLeftRightIcon = ({ color, ...rest }) => {
     return (
@@ -77,17 +69,14 @@ const WindowLaunchIcon = findComponentByCodeLazy("1-1h6a1 1 0 1 0 0-2H5Z");
 const XSmallIcon = findComponentByCodeLazy("1.4L12 13.42l5.3 5.3Z");
 const Chat = findComponentByCodeLazy("filterAfterTimestamp:", "chatInputType");
 const Resize = findComponentByCodeLazy("sidebarType:", "RESIZE_HANDLE_WIDTH)");
-const ChannelHeader = findComponentByCodeLazy(".forumPostTitle]:", '"channel-".concat');
+const ChannelHeader = findComponentByCodeLazy(".GUILD_ANNOUNCEMENT", '"channel-".concat');
 const PopoutWindow = findComponentByCodeLazy("Missing guestWindow reference");
 const FullChannelView = findComponentByCodeLazy("showFollowButton:(null");
 const WanderingCubesLoading = findComponentByCodeLazy('="wanderingCubes"');
 
-// love
-const ppStyle = findLazy(m => m?.popoutContent && Object.keys(m).length === 1);
-
 const ChatInputTypes = findByPropsLazy("FORM", "NORMAL");
 const Sidebars = findByPropsLazy("ThreadSidebar", "MessageRequestSidebar");
-const ChatClasses = findByPropsLazy("threadSidebarOpen");
+const ChatClasses = findCssClassesLazy("threadSidebarOpen", "loader");
 
 const ChannelSectionStore = findStoreLazy("ChannelSectionStore");
 
@@ -225,7 +214,6 @@ export default definePlugin({
         useEffect(() => {
             if (!channel) return;
 
-            // @ts-expect-error
             if (channel.isForumLikeChannel()) {
                 requireForumView().then(() => {
                     setViewComponent(
@@ -314,9 +302,9 @@ const Header = ({ guild, channel }: { guild: Guild; channel: Channel; }) => {
         <HeaderBar
             toolbar={
                 <>
-                    <HeaderBarIcon icon={ArrowsLeftRightIcon} tooltip="Switch channels" onClick={switchChannels} />
-                    <HeaderBarIcon icon={WindowLaunchIcon} tooltip="Popout Chat" onClick={openPopout} />
-                    <HeaderBarIcon icon={XSmallIcon} tooltip="Close Sidebar Chat" onClick={closeSidebar} />
+                    <HeaderBarButton icon={ArrowsLeftRightIcon} tooltip="Switch channels" onClick={switchChannels} />
+                    <HeaderBarButton icon={WindowLaunchIcon} tooltip="Popout Chat" onClick={openPopout} />
+                    <HeaderBarButton icon={XSmallIcon} tooltip="Close Sidebar Chat" onClick={closeSidebar} />
                 </>
             }
         >
@@ -337,9 +325,9 @@ const RenderPopout = ErrorBoundary.wrap(({ channel, name }: { channel: Channel; 
         <PopoutWindow
             withTitleBar
             windowKey={`DISCORD_VC_SC-${channel.id}`}
-            title={name || "Vencord"}
+            title={name || "Equicord"}
             channelId={channel.id}
-            contentClassName={ppStyle.popoutContent}
+            contentClassName={cl("popout")}
         >
             <FullChannelView providedChannel={channel} />
         </PopoutWindow>

@@ -4,18 +4,18 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { Settings } from "@api/Settings";
-import { tarExtMatcher } from "@plugins/anonymiseFileNames";
+import { isPluginEnabled } from "@api/PluginManager";
+import anonymiseFileNames, { tarExtMatcher } from "@plugins/anonymiseFileNames";
 import { Devs } from "@utils/constants";
 import definePlugin, { ReporterTestable } from "@utils/types";
 import { CloudUpload } from "@vencord/discord-types";
 
 const extensionMap = {
-    "ogg": [".ogv", ".oga", ".ogx", ".ogm", ".spx", ".opus", ".flac", ".aac", ".wma"],
-    "jpg": [".jpeg", ".jfif", ".jpe", ".jif", ".jfi", ".pjpeg", ".pjp", ".bmp", ".tiff", ".tif", ".webp"],
+    "ogg": [".ogv", ".oga", ".ogx", ".ogm", ".spx", ".aac", ".wma"],
+    "jpg": [".jpe", ".jif", ".jfi", ".pjpeg", ".pjp", ".bmp", ".tiff", ".tif"],
     "svg": [".svgz", ".ai", ".eps"],
-    "mp4": [".m4v", ".m4r", ".m4p", ".avi", ".mkv", ".wmv", ".flv", ".3gp", ".webm"],
-    "m4a": [".m4b", ".aiff", ".wav"],
+    "mp4": [".m4v", ".m4r", ".m4p", ".avi", ".mkv", ".wmv", ".flv", ".3gp"],
+    "m4a": [".m4b", ".aiff"],
     "mov": [".movie", ".qt", ".asf", ".rm", ".rmvb"],
     "png": [".ico", ".cur"],
 };
@@ -40,7 +40,7 @@ export default definePlugin({
                     replace: "$&$1.forEach($self.fixExt);"
                 }
             ],
-            predicate: () => !Settings.plugins.AnonymiseFileNames.enabled,
+            predicate: () => !isPluginEnabled(anonymiseFileNames.name),
         },
     ],
     fixExt(upload: CloudUpload) {

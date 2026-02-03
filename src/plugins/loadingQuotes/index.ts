@@ -45,6 +45,7 @@ const settings = definePluginSettings({
         description: "Additional custom quotes to possibly appear, separated by the below delimiter",
         type: OptionType.STRING,
         default: "",
+        multiline: true
     },
     additionalQuotesDelimiter: {
         description: "Delimiter for additional quotes",
@@ -83,7 +84,6 @@ export default definePlugin({
 
             if (!enableDiscordPresetQuotes)
                 quotes.length = 0;
-
 
             if (enablePluginPresetQuotes)
                 quotes.push(...presetQuotes);

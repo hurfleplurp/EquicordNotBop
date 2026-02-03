@@ -52,14 +52,14 @@ export const useDrag = findByCodeLazy("useDrag::spec.begin was deprecated");
 // you cant make a better finder i love that they remove display names sm
 export const useDrop = findByCodeLazy(".options);return", ".collect,");
 
-export const { match, P }: Pick<typeof TSPattern, "match" | "P"> = mapMangledModuleLazy("@ts-pattern/matcher", {
+export const { match, P }: { match: typeof TSPattern["match"], P: typeof TSPattern["P"]; } = mapMangledModuleLazy("@ts-pattern/matcher", {
     match: filters.byCode("return new"),
     P: filters.byProps("when")
 });
 
 export const lodash: typeof import("lodash") = findByPropsLazy("debounce", "cloneDeep");
 
-export const i18n = mapMangledModuleLazy('defaultLocale:"en-US"', {
+export const i18n = mapMangledModuleLazy(['defaultLocale:"en-US"', /initialLocale:\i/], {
     t: m => m?.[Symbol.toStringTag] === "IntlMessagesProxy",
     intl: m => m != null && Object.getPrototypeOf(m)?.withFormatters != null
 }, true);
@@ -83,6 +83,7 @@ const ToastType = {
     BOOKMARK: "bookmark",
     CLOCK: "clock"
 };
+
 const ToastPosition = {
     TOP: 0,
     BOTTOM: 1
@@ -141,7 +142,7 @@ export const UserUtils = {
 
 export const UploadManager = findByPropsLazy("clearAll", "addFile");
 export const UploadHandler = {
-    promptToUpload: findByCodeLazy("=!0,showLargeMessageDialog:") as (files: File[], channel: t.Channel, draftType: Number) => void
+    promptToUpload: findByCodeLazy("Unexpected mismatch between files and file metadata") as (files: File[], channel: t.Channel, draftType: Number) => void
 };
 
 export const ApplicationAssetUtils = mapMangledModuleLazy("getAssetImage: size must === [", {
@@ -151,7 +152,7 @@ export const ApplicationAssetUtils = mapMangledModuleLazy("getAssetImage: size m
     getAssets: filters.byCode(".assets")
 });
 
-export const NavigationRouter: t.NavigationRouter = mapMangledModuleLazy("Transitioning to ", {
+export const NavigationRouter: t.NavigationRouter = mapMangledModuleLazy("transitionTo - Transitioning to", {
     transitionTo: filters.byCode("transitionTo -"),
     transitionToGuild: filters.byCode("transitionToGuild -"),
     back: filters.byCode("goBack()"),
@@ -175,6 +176,11 @@ export const { zustandPersist } = mapMangledModuleLazy(".onRehydrateStorage)?", 
     zustandPersist: filters.byCode(/(\(\i,\i\))=>.+?\i\1/)
 });
 
+export const { openUserSettings } = findByPropsLazy("openUserSettings");
+export function openUserSettingsPanel(panel: string) {
+    openUserSettings(panel + "_panel");
+}
+
 export const MessageActions = findByPropsLazy("editMessage", "sendMessage");
 export const MessageCache = findByPropsLazy("clearCache", "_channelMessages");
 export const UserProfileActions = findByPropsLazy("openUserProfileModal", "closeUserProfileModal");
@@ -184,6 +190,8 @@ export const ChannelActionCreators = findByPropsLazy("openPrivateChannel");
 export const VoiceActions = findByPropsLazy("toggleSelfMute");
 export const GuildActions = findByPropsLazy("setServerMute", "setServerDeaf");
 export const ChannelActions = findByPropsLazy("selectChannel", "selectVoiceChannel");
+export const DraftActions = findByPropsLazy("saveDraft", "changeDraft");
+export const PinActions = findByPropsLazy("pinMessage", "unpinMessage");
 
 export const IconUtils: t.IconUtils = findByPropsLazy("getGuildBannerURL", "getUserAvatarURL");
 
@@ -216,8 +224,7 @@ export const DisplayProfileUtils: t.DisplayProfileUtils = mapMangledModuleLazy(/
 export const DateUtils: t.DateUtils = mapMangledModuleLazy("millisecondsInUnit:", {
     calendarFormat: filters.byCode("sameElse"),
     dateFormat: filters.byCode('":'),
-    // TODO: the +? are for compat with the old version - Remove them once no longer needed
-    isSameDay: filters.byCode(/Math\.abs\(\+?\i-\+?\i\)/),
+    isSameDay: filters.byCode(/Math\.abs\(\i-\i\)/),
     diffAsUnits: filters.byCode("days:0", "millisecondsInUnit")
 });
 
