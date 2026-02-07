@@ -30,8 +30,6 @@ const showToast = (message: string, type: typeof Toasts.Type[keyof typeof Toasts
     Toasts.show(toastOptions as any); // Type assertion to handle the Discord.js toast type
 };
 
-
-
 type CommandReturnValue = { content: string; } | void;
 type CommandHandler = (args: any[], ctx: any) => Promise<CommandReturnValue>;
 
@@ -104,8 +102,6 @@ async function setChatContext(channelId: string, context: string): Promise<void>
     }
     await saveChatContexts(contexts);
 }
-
-
 
 const settings = definePluginSettings({
     apiKey: {
@@ -462,8 +458,6 @@ function isResponseIncomplete(response: string, threshold: number): boolean {
     return false;
 }
 
-
-
 async function generateAiResponse(channelId: string, retryCount = 0, existingController?: AbortController): Promise<string> {
     try {
         logger.log("Starting AI response generation...");
@@ -799,26 +793,46 @@ async function handleAiResponse(insertMode = false) {
     }
 }
 
+function AiResponderIcon() {
+    return (
+        <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+        >
+            <path d="M12 2C17.52 2 22 6.48 22 12C22 17.52 17.52 22 12 22C6.48 22 2 17.52 2 12C2 6.48 6.48 2 12 2ZM18 12H14L16 10V7H8V10L10 12H6L10 16H14L18 12Z" />
+        </svg>
+    );
+}
+
 const AiResponderButton: ChatBarButtonFactory = ({ isMainChat }) => {
     if (!isMainChat) return null;
 
     return (
         <ChatBarButton
             tooltip="Generate AI Response (Right-click for preview)"
-            onClick={() => handleAiResponse(true)}
-            onContextMenu={e => {
-                e.preventDefault();
-                handleAiResponse(false); // Preview mode on right-click
-            }}
+            onClick={() => { }}
         >
-            <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="currentColor"
+            <div
+                style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}
+                onClickCapture={e => {
+                    console.log("[AiResponder] Wrapper onClickCapture triggered");
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("[AiResponder] Calling handleAiResponse(true)");
+                    handleAiResponse(true);
+                }}
+                onContextMenuCapture={e => {
+                    console.log("[AiResponder] Wrapper onContextMenuCapture triggered");
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("[AiResponder] Calling handleAiResponse(false)");
+                    handleAiResponse(false);
+                }}
             >
-                <path d="M12 2C17.52 2 22 6.48 22 12C22 17.52 17.52 22 12 22C6.48 22 2 17.52 2 12C2 6.48 6.48 2 12 2ZM18 12H14L16 10V7H8V10L10 12H6L10 16H14L18 12Z" />
-            </svg>
+                <AiResponderIcon />
+            </div>
         </ChatBarButton>
     );
 };
@@ -853,7 +867,10 @@ export default definePlugin({
     authors: [{ name: "Sufo", id: 1234567890n }],
     settings,
 
-    renderChatBarButton: AiResponderButton,
+    chatBarButton: {
+        icon: AiResponderIcon,
+        render: AiResponderButton
+    },
 
     commands: [
         {

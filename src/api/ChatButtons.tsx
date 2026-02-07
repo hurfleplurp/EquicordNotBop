@@ -163,6 +163,7 @@ addContextMenuPatch("textarea-context", (children, args) => {
     const { chatBarButtons } = useSettings(["uiElements.chatBarButtons.*"]).uiElements;
 
     const buttons = Array.from(ChatBarButtonMap.entries());
+    console.log("[ChatButtons] Textarea context patch running. Buttons:", buttons.length);
     if (!buttons.length) return;
 
     const group = findGroupChildrenByChildId("submit-button", children);
