@@ -6,6 +6,7 @@
 
 import { plugins } from "@api/PluginManager";
 import { definePluginSettings } from "@api/Settings";
+import { QrCodeIcon } from "@components/Icons";
 import { Paragraph } from "@components/Paragraph";
 import SettingsPlugin from "@plugins/_core/settings";
 import { EquicordDevs } from "@utils/constants";
@@ -15,7 +16,6 @@ import definePlugin, { OptionType } from "@utils/types";
 import { Button } from "@webpack/common";
 
 import { preload, unload } from "./images";
-import { QrCodeIcon } from "./ui";
 import openQrModal from "./ui/modals/QrModal";
 
 const settings = definePluginSettings({
@@ -42,6 +42,7 @@ const settings = definePluginSettings({
 export default definePlugin({
     name: "LoginWithQR",
     description: "Allows you to login to another device by scanning a login QR code, just like on mobile!",
+    tags: ["Utility"],
     authors: [EquicordDevs.nexpid],
 
     settings,
@@ -66,13 +67,11 @@ export default definePlugin({
             Component: openQrModal,
             Icon: QrCodeIcon
         });
-        SettingsPlugin.settingsSectionMap.push(["EquicordLoginWithQR", "equicord_login_with_qr"]);
         preload();
     },
 
     stop() {
         removeFromArray(SettingsPlugin.customEntries, e => e.key === "equicord_login_with_qr");
-        removeFromArray(SettingsPlugin.settingsSectionMap, entry => entry[1] === "equicord_login_with_qr");
         unload();
     },
 });

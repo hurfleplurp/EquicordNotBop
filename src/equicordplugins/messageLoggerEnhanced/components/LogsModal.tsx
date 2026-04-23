@@ -16,8 +16,8 @@ import { type User } from "@vencord/discord-types";
 import { find, findByCode, findByCodeLazy } from "@webpack";
 import { Alerts, ChannelStore, ContextMenuApi, FluxDispatcher, GuildStore, Menu, NavigationRouter, React, TabBar, TextInput, Tooltip, useMemo, useRef, useState } from "@webpack/common";
 
-import { clearMessagesIDB, DBMessageRecord, deleteMessageIDB, deleteMessagesBulkIDB } from "../db";
-import { cl, settings } from "../index";
+import { DBMessageRecord, deleteMessageIDB, deleteMessagesBulkIDB } from "../db";
+import { cl, clearLogs, settings } from "../index";
 import { LoggedMessage, LoggedMessageJSON } from "../types";
 import { messageJsonToMessageClass } from "../utils";
 import { importLogs } from "../utils/settingsUtils";
@@ -147,7 +147,7 @@ export function LogsModal({ modalProps, initalQuery }: Props) {
                         confirmVariant: "critical-primary",
                         cancelText: "Cancel",
                         onConfirm: async () => {
-                            await clearMessagesIDB();
+                            await clearLogs();
                             reset();
                         }
 
@@ -229,7 +229,7 @@ function LogsContent({ visibleMessages, canLoadMore, sortNewest, tab, reset, han
     );
 }
 
-const LogsContentMemo = LazyComponent(() => React.memo(LogsContent));
+const LogsContentMemo = LazyComponent(() => LogsContent);
 
 function NoResults({ tab }: { tab: LogTabs; }) {
     const generateSuggestedTabs = (tab: LogTabs) => {

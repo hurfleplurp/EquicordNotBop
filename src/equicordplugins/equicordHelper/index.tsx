@@ -6,8 +6,9 @@
 
 import { ApplicationCommandInputType, sendBotMessage } from "@api/Commands";
 import { HeaderBarButton } from "@api/HeaderBar";
+import { addMessagePreSendListener, removeMessagePreSendListener } from "@api/MessageEvents";
 import { isPluginEnabled } from "@api/PluginManager";
-import { definePluginSettings } from "@api/Settings";
+import { definePluginSettings, migratePluginToSettings, Settings } from "@api/Settings";
 import customRPC from "@plugins/customRPC";
 import { Devs, EquicordDevs, GUILD_ID, SUPPORT_CHANNEL_ID, SUPPORT_CHANNEL_IDS, VC_SUPPORT_CHANNEL_IDS } from "@utils/constants";
 import { isAnyPluginDev } from "@utils/misc";
@@ -19,6 +20,10 @@ import { ComponentType } from "react";
 
 import { PluginButtons } from "./pluginButtons";
 import { PluginCards } from "./pluginCards";
+
+migratePluginToSettings(true, "EquicordHelper", "NoBulletPoints", "noBulletPoints");
+migratePluginToSettings(true, "EquicordHelper", "NoModalAnimation", "noModalAnimation");
+migratePluginToSettings(true, "EquicordHelper", "GuildTagSettings", "disableAdoptTagPrompt");
 
 let clicked = false;
 
@@ -58,6 +63,11 @@ function StandingButton() {
     );
 }
 
+const listener = async (channelId, msg) => {
+    if (!settings.store.noBulletPoints) return;
+    msg.content = textProcessing(msg.content);
+};
+
 const settings = definePluginSettings({
     noMirroredCamera: {
         type: OptionType.BOOLEAN,
@@ -74,12 +84,6 @@ const settings = definePluginSettings({
     showYourOwnActivityButtons: {
         type: OptionType.BOOLEAN,
         description: "Discord hides your own activity buttons for some reason",
-        restartNeeded: true,
-        default: false,
-    },
-    noDefaultHangStatus: {
-        type: OptionType.BOOLEAN,
-        description: "Disable the default hang status when joining voice channels",
         restartNeeded: true,
         default: false,
     },
@@ -106,12 +110,48 @@ const settings = definePluginSettings({
         restartNeeded: true,
         default: false
     },
+    noBulletPoints: {
+        type: OptionType.BOOLEAN,
+        description: "Stops you from typing markdown bullet points (stinky)",
+        restartNeeded: true,
+        default: false
+    },
+    noModalAnimation: {
+        type: OptionType.BOOLEAN,
+        description: "Remove the 300ms long animation when opening or closing modals",
+        restartNeeded: true,
+        default: false
+    },
+    disableAdoptTagPrompt: {
+        type: OptionType.BOOLEAN,
+        description: "Disable the prompt to adopt tags",
+        restartNeeded: true,
+        default: false,
+    },
+    jsonGateway: {
+        type: OptionType.BOOLEAN,
+        description: "Forces JSON on gateway reconnect",
+        restartNeeded: true,
+        default: false,
+    }
 });
 
 export default definePlugin({
     name: "EquicordHelper",
     description: "Used to provide support, fix discord caused crashes, and other misc features.",
-    authors: [Devs.thororen, EquicordDevs.nyx, EquicordDevs.Naibuu, EquicordDevs.keircn, EquicordDevs.SerStars, EquicordDevs.mart, EquicordDevs.omaw],
+    tags: ["Appearance", "Commands", "Utility"],
+    dependencies: ["CommandsAPI", "HeaderBarAPI", "MessageAccessoriesAPI"],
+    authors: [
+        Devs.thororen,
+        EquicordDevs.nyx,
+        EquicordDevs.Naibuu,
+        EquicordDevs.keircn,
+        EquicordDevs.SerStars,
+        EquicordDevs.mart,
+        EquicordDevs.omaw,
+        Devs.Samwich,
+        Devs.AutumnVN
+    ],
     required: true,
     settings,
     headerBarButton: {
@@ -179,28 +219,9 @@ export default definePlugin({
                 replace: "$& && false"
             }
         },
-        // No Default Hang Status
-        {
-            find: ".CHILLING)",
-            predicate: () => settings.store.noDefaultHangStatus,
-            replacement: {
-                match: /{enableHangStatus:(\i),/,
-                replace: "{_enableHangStatus:$1=false,"
-            }
-        },
-        // Always show open legacy settings
-        {
-            find: ".DEVELOPER_SECTION,",
-            replacement: [
-                {
-                    match: /\i\.\i\.isDeveloper/,
-                    replace: "true"
-                },
-            ]
-        },
         // Force Role Icon
         {
-            find: "Message Username",
+            find: "#{intl::GUILD_COMMUNICATION_DISABLED_ICON_TOOLTIP_BODY}",
             predicate: () => settings.store.forceRoleIcon,
             replacement: {
                 match: /(?<=\}\):null\].{0,150}\?2:)0(?=\})/,
@@ -209,13 +230,87 @@ export default definePlugin({
         },
         // Restore File Download Button
         {
-            predicate: () => settings.store.restoreFileDownloadButton,
             find: '"VISUAL_PLACEHOLDER":',
+            predicate: () => settings.store.restoreFileDownloadButton,
             replacement: {
                 match: /(\.downloadUrl,showDownload:)\i/,
                 replace: "$1!0"
             }
         },
+        // Removes Modal Animation
+        {
+            find: "DURATION_IN:",
+            predicate: () => settings.store.noModalAnimation,
+            replacement: {
+                match: /300,/,
+                replace: "0,",
+            }
+        },
+        // Removes Modal Animation
+        {
+            find: 'backdropFilter:"blur(0px)"',
+            predicate: () => settings.store.noModalAnimation,
+            replacement: {
+                match: /\?0:200/,
+                replace: "?0:0",
+            }
+        },
+        // Removes Modal Animation
+        {
+            find: '="ABOVE"',
+            predicate: () => settings.store.noModalAnimation,
+            replacement: {
+                match: /\?\?300/,
+                replace: "??0",
+            }
+        },
+        // Removes Modal Animation
+        {
+            find: "renderLurkerModeUpsellPopout,position:",
+            predicate: () => settings.store.noModalAnimation,
+            replacement: {
+                match: /200:300/g,
+                replace: "0:0",
+            },
+        },
+        {
+            find: "GuildTagAvailableCoachmark",
+            replacement: {
+                match: /return.{0,100}shouldShow/g,
+                replace: "return null;$&"
+            },
+            predicate: () => settings.store.disableAdoptTagPrompt
+        },
+        {
+            find: "JSONEncoding",
+            replacement: {
+                match: /void 0!==\i\?\i:/,
+                replace: ""
+            },
+            predicate: () => settings.store.jsonGateway
+        },
+        {
+            find: ".USE_OSX_NATIVE_TRAFFIC_LIGHTS",
+            predicate: () => Settings.winNativeTitleBar,
+            replacement: {
+                match: /case \i\.\i\.WINDOWS:/,
+                replace: 'case "WEB":'
+            },
+        },
+        {
+            find: '"refresh-title-bar-small"',
+            predicate: () => Settings.winNativeTitleBar,
+            replacement: [
+                {
+                    match: /\i===\i\.PlatformTypes\.WINDOWS/g,
+                    replace: "false"
+                },
+                {
+                    match: /\i===\i\.PlatformTypes\.WEB/g,
+                    replace: "true"
+                }
+            ]
+        }
     ],
     renderMessageAccessory(props) {
         return (
@@ -265,5 +360,19 @@ export default definePlugin({
                 }
             }
         }
-    ]
+    ],
+    start() {
+        if (settings.store.noBulletPoints) {
+            addMessagePreSendListener(listener);
+        }
+    },
+    stop() {
+        if (settings.store.noBulletPoints) {
+            removeMessagePreSendListener(listener);
+        }
+    }
 });
+
+function textProcessing(text: string): string {
+    return text.replace(/(^|\n)(\s*)([*+-])\s+/g, "$1$2\\$3 ");
+}

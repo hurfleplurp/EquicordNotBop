@@ -19,7 +19,7 @@ const canSplit: () => boolean = () => {
 };
 
 const autoMaxLength = () => {
-    const hasNitro = UserStore.getCurrentUser().premiumType === 2;
+    const hasNitro = UserStore.getCurrentUser()?.premiumType === 2;
     return hasNitro ? 4000 : 2000;
 };
 
@@ -116,6 +116,8 @@ const settings = definePluginSettings({
 export default definePlugin({
     name: "SplitLargeMessages",
     description: "Splits large messages into multiple to fit Discord's message limit.",
+    dependencies: ["MessageEventsAPI"],
+    tags: ["Appearance", "Customisation", "Chat"],
     authors: [EquicordDevs.Reycko],
     settings,
     onBeforeMessageSend: listener,

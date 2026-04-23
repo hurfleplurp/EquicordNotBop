@@ -5,7 +5,7 @@
  */
 
 import { isPluginEnabled } from "@api/PluginManager";
-import betterUserArea from "@equicordplugins/betterUserArea";
+import declutter from "@equicordplugins/declutter";
 import { Devs } from "@utils/constants";
 import definePlugin from "@utils/types";
 import { findCssClassesLazy } from "@webpack";
@@ -19,11 +19,11 @@ export default definePlugin({
 
     patches: [
         {
-            find: ".WIDGETS_RTC_UPSELL_COACHMARK),",
+            find: ".DISPLAY_NAME_STYLES_COACHMARK)",
             replacement: [
                 {
-                    match: /(?<=className:(\i)\.\i,style:\i,)children:\[/,
-                    replace: "children:[...$self.renderButtons(arguments[0],$1),"
+                    match: /children:\[(?=.{0,50}accountContainerRef:\i)/,
+                    replace: "children:[...$self.renderButtons(arguments[0]),"
                 },
                 // fix discord weird shrink with extra buttons
                 {
@@ -43,6 +43,6 @@ export default definePlugin({
     },
 
     shouldHideTooltips() {
-        return isPluginEnabled(betterUserArea.name) && betterUserArea.settings.store.removeButtonTooltips;
+        return isPluginEnabled(declutter.name) && declutter.settings.store.removeButtonTooltips;
     }
 });

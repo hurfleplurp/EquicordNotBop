@@ -257,6 +257,7 @@ export default definePlugin({
     name: "Timezones",
     authors: [Devs.Aria, EquicordDevs.creations],
     description: "Shows the local time of users in profiles and message headers",
+    tags: ["Appearance", "Chat", "Utility"],
     contextMenus: {
         "user-context": userContextMenuPatch
     },
@@ -271,7 +272,7 @@ export default definePlugin({
             }
         },
         {
-            find: '"Message Username"',
+            find: "#{intl::GUILD_COMMUNICATION_DISABLED_ICON_TOOLTIP_BODY}",
             replacement: {
                 // thanks https://github.com/Syncxv/vc-timezones/pull/4
                 match: /(?<=isVisibleOnlyOnHover.+?)id:.{1,11},timestamp.{1,50}}\),/,

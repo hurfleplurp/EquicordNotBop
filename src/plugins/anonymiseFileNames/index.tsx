@@ -75,6 +75,8 @@ export default definePlugin({
     name: "AnonymiseFileNames",
     authors: [Devs.fawn],
     description: "Anonymise uploaded file names",
+    dependencies: ["CommandsAPI"],
+    tags: ["Privacy", "Utility"],
     isModified: true,
     settings,
 
@@ -134,7 +136,7 @@ export default definePlugin({
         const newFilename = (() => {
             switch (settings.store.method) {
                 case Methods.Random:
-                    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                    const chars = "0123456789bdfhjkmnpqrstvwxz";
                     const returnedName = Array.from(
                         { length: settings.store.randomisedLength },
                         () => chars[Math.floor(Math.random() * chars.length)]

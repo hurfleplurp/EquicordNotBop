@@ -142,7 +142,8 @@ function activeNowView(cards) {
 export default definePlugin({
     name: "ClientSideBlock",
     description: "Allows you to locally hide almost all content from any user",
-    tags: ["blocked", "block", "hide", "hidden", "noblockedmessages"],
+    tags: ["Utility"],
+    searchTerms: ["blocked", "block", "hide", "hidden", "noblockedmessages"],
     authors: [Devs.Samwich, EquicordDevs.KamiRu],
     settings,
     activeNowView,
@@ -168,20 +169,19 @@ export default definePlugin({
         },
         // member list
         {
-            find: "._areActivitiesExperimentallyHidden=(",
-            replacement: {
-                match: /(?<=user:(\i),guildId:\i,channel:(\i).*?)BOOST_GEM_ICON.{0,10}\);/,
-                replace: "$&if($self.shouldHideUser($1.id, $2.id)) return null; "
-            }
-        },
-        // stop the role header from displaying if all users with that role are hidden (wip sorta)
-        {
-            find: "._areActivitiesExperimentallyHidden=(",
-            replacement: {
-                match: /\i.memo\(function\(\i\){/,
-                replace: "$&if($self.isRoleAllBlockedMembers(arguments[0].id, arguments[0].guildId)) return null;"
-            },
-            predicate: () => settings.store.hideEmptyRoles
+            find: "this.updateMaxContentFeedRowSeen()",
+            replacement: [
+                {
+                    match: /(?<=user:(\i),guildId:\i,channel:(\i).*?)BOOST_GEM_ICON.{0,10}\);/,
+                    replace: "$&if($self.shouldHideUser($1.id, $2.id)) return null; "
+                },
+                // stop the role header from displaying if all users with that role are hidden (wip sorta)
+                {
+                    match: /\i.memo\(function\(\i\){/,
+                    replace: "$&if($self.isRoleAllBlockedMembers(arguments[0].id, arguments[0].guildId)) return null;",
+                    predicate: () => settings.store.hideEmptyRoles
+                },
+            ]
         },
         // "1 blocked message"
         {

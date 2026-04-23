@@ -30,7 +30,7 @@ function GuildSelector() {
     return (
         <SearchableSelect
             options={options}
-            value={options.find(o => o.value === soundGuildId)}
+            value={options.find(o => o.value === soundGuildId)?.value}
             placeholder="Select a server..."
             maxVisibleItems={6}
             closeOnSelect={true}
@@ -104,6 +104,7 @@ let original: typeof ChannelActions.selectVoiceChannel;
 export default definePlugin({
     name: "ExitSounds",
     description: "Play soundboard sounds when you disconnect from voice.",
+    tags: ["Fun", "Voice"],
     authors: [Devs.prism],
     dependencies: ["AudioPlayerAPI"],
     settings,

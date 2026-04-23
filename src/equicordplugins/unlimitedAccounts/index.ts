@@ -32,11 +32,12 @@ const settings = definePluginSettings({
 export default definePlugin({
     name: "UnlimitedAccounts",
     description: "Increases the amount of accounts you can add.",
+    tags: ["Utility"],
     authors: [Devs.thororen],
     settings,
     patches: [
         {
-            find: "pushSyncToken:null",
+            find: "pushSyncToken:null}),",
             replacement: [
                 {
                     match: /(\).length>)5/,
@@ -56,11 +57,7 @@ export default definePlugin({
                     replace: "$1$self.getMaxAccounts()",
                 },
                 {
-                    match: /(\i.length<)5/,
-                    replace: "$1$self.getMaxAccounts()",
-                },
-                {
-                    match: /(\i.length>=)5/,
+                    match: /(\i.length(<|>=))5/g,
                     replace: "$1$self.getMaxAccounts()",
                 },
             ]

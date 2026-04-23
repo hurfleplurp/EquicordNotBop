@@ -142,7 +142,7 @@ export const UserUtils = {
 
 export const UploadManager = findByPropsLazy("clearAll", "addFile");
 export const UploadHandler = {
-    promptToUpload: findByCodeLazy("Unexpected mismatch between files and file metadata") as (files: File[], channel: t.Channel, draftType: Number) => void
+    promptToUpload: findByCodeLazy("Unexpected mismatch between files and file metadata") as (files: File[], channel: t.Channel, draftType: Number) => Promise<void>
 };
 
 export const ApplicationAssetUtils = mapMangledModuleLazy("getAssetImage: size must === [", {
@@ -192,7 +192,7 @@ export const IconUtils: t.IconUtils = findByPropsLazy("getGuildBannerURL", "getU
 
 export const ColorUtils = mapMangledModuleLazy("Invalid hex color format", {
     rgbToHex: filters.byCode(".toString(16).slice(1)"),
-    hexToRgba: filters.byCode("rgba(", "??"),
+    hexToRgba: filters.byCode("`rgba(${"),
     hexToRgb: filters.byCode(".rgb();return"),
     rgbToHsl: filters.byCode("saturation:", "lightness:"),
     mixColors: filters.byCode(".substring(1,3),16)"),
@@ -250,3 +250,7 @@ export const MessageTypeSets: t.MessageTypeSets = findByPropsLazy("REPLYABLE", "
 export const fetchApplicationsRPC = findByCodeLazy('"Invalid Origin"', ".application");
 
 export const CloudUploader = findLazy(m => m.prototype?.trackUploadFinished) as typeof t.CloudUpload;
+
+export const URLUtils: t.URLUtils = findByPropsLazy("URL_REGEX", "makeUrl", "isDiscordUrl");
+export const Humanize: t.Humanize = findByPropsLazy("filesize", "relativeTime", "ordinal");
+export const EmojiUtils: t.EmojiUtils = findByPropsLazy("getEmojiColors", "getURL");

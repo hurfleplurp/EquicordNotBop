@@ -224,7 +224,7 @@ function Timestamp({ channel }: { channel: Channel; }) {
     if (!lastMessage) return null;
 
     const timestamp = SnowflakeUtils.extractTimestamp(lastMessage.id);
-    const className = ExperimentStore.getUserExperimentBucket("2021-09_favorites_server") >= 1 ? cl("timestamp-favorites") : cl("timestamp");
+    const className = ExperimentStore.getUserExperimentBucket("2026-01-favorites-server") > 0 ? cl("timestamp-favorites") : cl("timestamp");
     return <span className={className}>{formatRelativeTime(timestamp)}</span>;
 }
 
@@ -239,6 +239,8 @@ function shouldShowActivity(lastMessage: Message | undefined, hasActivity: boole
 export default definePlugin({
     name: "MessagePeek",
     description: "Shows the last message preview and timestamp in the Direct Messages list.",
+    dependencies: ["MemberListDecoratorsAPI"],
+    tags: ["Appearance", "Chat"],
     authors: [Devs.prism, EquicordDevs.justjxke],
     settings,
     patches: [
@@ -252,10 +254,24 @@ export default definePlugin({
     ],
 
     async start() {
-        const channels = ChannelStore.getSortedPrivateChannels();
-        for (const channel of channels) {
-            if (!MessageStore.getLastMessage(channel.id)) {
-                await MessageActions.fetchMessages({ channelId: channel.id, limit: 1 });
+        const channels = ChannelStore.getSortedPrivateChannels()
+            .slice(0, 25)
+            .filter(c => !MessageStore.getLastMessage(c.id));
+
+        for (let i = 0; i < channels.length; i += 5) {
+            const batch = channels.slice(i, i + 5);
+
+            await Promise.allSettled(
+                batch.map(channel =>
+                    MessageActions.fetchMessages({
+                        channelId: channel.id,
+                        limit: 1
+                    })
+                )
+            );
+
+            if (i + 5 < channels.length) {
+                await new Promise(r => setTimeout(r, 3000));
             }
         }
     },

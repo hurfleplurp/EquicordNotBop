@@ -18,15 +18,16 @@
 
 import { AudioProcessor } from "@api/AudioPlayer";
 import type { ProfileBadge } from "@api/Badges";
-import type { ChatBarButtonData, ChatBarButtonFactory } from "@api/ChatButtons";
+import type { ChatBarButtonData } from "@api/ChatButtons";
 import type { NavContextMenuPatchCallback } from "@api/ContextMenu";
 import { HeaderBarButtonData } from "@api/HeaderBar";
 import type { MemberListDecoratorFactory } from "@api/MemberListDecorators";
 import type { MessageAccessoryFactory } from "@api/MessageAccessories";
 import type { MessageDecorationFactory } from "@api/MessageDecorations";
 import type { MessageClickListener, MessageEditListener, MessageSendListener } from "@api/MessageEvents";
-import type { MessagePopoverButtonData, MessagePopoverButtonFactory } from "@api/MessagePopover";
+import type { MessagePopoverButtonData } from "@api/MessagePopover";
 import type { NicknameIconFactory } from "@api/NicknameIcons";
+import { ProfileCollectionFactory } from "@api/ProfileCollections";
 import type { UserAreaButtonData } from "@api/UserArea";
 import type { Command, FluxEvents } from "@vencord/discord-types";
 import type { ReactNode } from "react";
@@ -44,6 +45,32 @@ export function makeRange(start: number, end: number, step = 1) {
     }
     return ranges;
 }
+
+export const PluginTags = [
+    "Accessibility",
+    "Activity",
+    "Appearance",
+    "Chat",
+    "Commands",
+    "Console",
+    "Customisation",
+    "Developers",
+    "Emotes",
+    "Friends",
+    "Fun",
+    "Media",
+    "Notifications",
+    "Organisation",
+    "Privacy",
+    "Reactions",
+    "Roles",
+    "Servers",
+    "Shortcuts",
+    "Utility",
+    "Voice"
+] as const;
+
+export type PluginTag = typeof PluginTags[number];
 
 export type ReplaceFn = (match: string, ...groups: string[]) => string;
 
@@ -104,6 +131,9 @@ export type IconProps = { height?: number | string; width?: number | string; cla
 export interface PluginDef {
     name: string;
     description: string;
+    /** Additional search terms that will bring up your plugin */
+    searchTerms?: string[];
+    tags?: PluginTag[];
     authors: PluginAuthor[];
     start?(): void;
     stop?(): void;
@@ -181,8 +211,6 @@ export interface PluginDef {
      */
     toolboxActions?: Record<string, () => void> | (() => ReactNode);
 
-    tags?: string[];
-
     /**
      * Managed style to automatically enable and disable when the plugin is enabled or disabled
      */
@@ -208,16 +236,7 @@ export interface PluginDef {
     headerBarButton?: HeaderBarButtonData;
     audioProcessor?: AudioProcessor;
     userAreaButton?: UserAreaButtonData;
-
-    // TODO: Remove eventually
-    /**
-     * @deprecated Use {@link chatBarButton} instead
-     */
-    renderChatBarButton?: ChatBarButtonFactory;
-    /**
-     * @deprecated Use {@link messagePopoverButton} instead
-     */
-    renderMessagePopoverButton?: MessagePopoverButtonFactory;
+    renderProfileCollection?: ProfileCollectionFactory;
 
     /**
      * A Vencord plugin that is modified for extra features in Equicord

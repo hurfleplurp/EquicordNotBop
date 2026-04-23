@@ -51,6 +51,7 @@ const settings = definePluginSettings({
 export default definePlugin({
     name: "AlwaysAnimate",
     description: "Animates anything that can be animated",
+    tags: ["Appearance", "Fun"],
     authors: [Devs.FieryFlames],
     settings,
     patches: [
@@ -92,8 +93,8 @@ export default definePlugin({
             find: ".MINI_PREVIEW,[",
             predicate: () => settings.store.nameplates,
             replacement: {
-                match: /animate:\i,loop:.{0,15}===\i/,
-                replace: "animate:true,loop:true"
+                match: /animate:\i,loop:/,
+                replace: "animate:true,loop:true,_loop:"
             },
         },
         {

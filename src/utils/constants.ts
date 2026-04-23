@@ -466,7 +466,7 @@ export const Devs = /* #__PURE__*/ Object.freeze({
     },
     nin0dev: {
         name: "nin0dev",
-        id: 886685857560539176n
+        id: 1395533040914141235n
     },
     Elvyra: {
         name: "Elvyra",
@@ -496,9 +496,9 @@ export const Devs = /* #__PURE__*/ Object.freeze({
         name: "puv",
         id: 469441552251355137n
     },
-    Kodarru: {
-        name: "Kodarru",
-        id: 785227396218748949n
+    IcedMarina: {
+        name: "icedmarina",
+        id: 594406131670188042n
     },
     nakoyasha: {
         name: "nakoyasha",
@@ -695,6 +695,10 @@ export const EquicordDevs = Object.freeze({
         name: "camila314",
         id: 738592270617542716n
     },
+    nickwoah: {
+        name: "nickwoah",
+        id: 644298972420374528n
+    },
     Wolfie: {
         name: "wolfieeeeeeee",
         id: 347096063569559553n
@@ -757,7 +761,7 @@ export const EquicordDevs = Object.freeze({
     },
     Synth: {
         name: "synthxcx",
-        id: 934393331562205195n
+        id: 1116836557396119613n
     },
     Hanzy: {
         name: "hanzydev",
@@ -876,8 +880,8 @@ export const EquicordDevs = Object.freeze({
         id: 1271128098301022240n
     },
     nin0dev: {
-        name: "nin0dev",
-        id: 886685857560539176n
+        name: "nin0",
+        id: 1395533040914141235n
     },
     D3SOX: {
         name: "D3SOX",
@@ -993,7 +997,7 @@ export const EquicordDevs = Object.freeze({
         id: 984392761929256980n
     },
     creations: {
-        name: "Creation's",
+        name: "creations",
         id: 209830981060788225n
     },
     Leko: {
@@ -1218,7 +1222,7 @@ export const EquicordDevs = Object.freeze({
     },
     neoarz: {
         name: "neoarz",
-        id: 1015372540937502851n
+        id: 218675193592283137n
     },
     KamiRu: {
         name: "KamiRu",
@@ -1255,7 +1259,43 @@ export const EquicordDevs = Object.freeze({
     davri: {
         name: "Davri",
         id: 457579346282938368n,
-    }
+    },
+    yash: {
+        name: "yash",
+        id: 889150838658977874n,
+    },
+    Leon135: {
+        name: "Leon135",
+        id: 309275452231385088n,
+    },
+    bbpltergiest: {
+        name: "bbpltergiest",
+        id: 279448683672502274n,
+    },
+    mshl: {
+        name: "m.shl",
+        id: 1025245410224263258n,
+    },
+    ScattrdBlade: {
+        name: "ScattrdBlade",
+        id: 678007540608532491n
+    },
+    Ape: {
+        name: "Ape",
+        id: 722832640360841308n,
+    },
+    Kiri: {
+        name: "Kiri",
+        id: 310525496771346434n,
+    },
+    pointy: {
+        name: "pointy",
+        id: 99914384989519872n
+    },
+    dka: {
+        name: "DKA",
+        id: 119386840624005121n
+    },
 } satisfies Record<string, Dev>);
 
 // iife so #__PURE__ works correctly

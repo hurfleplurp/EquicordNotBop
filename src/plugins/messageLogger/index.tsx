@@ -132,7 +132,7 @@ const patchMessageContextMenu: NavContextMenuPatchCallback = (
                         mlDeleted: true,
                     });
                 } else {
-                    message.editHistory = [];
+                    updateMessage(channel_id, id, { editHistory: [] });
                 }
             }}
         />,
@@ -321,7 +321,7 @@ export function parseEditContent(content: string, message: Message, previousCont
     });
 }
 
-const settings = definePluginSettings({
+export const settings = definePluginSettings({
     deleteStyle: {
         type: OptionType.SELECT,
         description: "The style of deleted messages",
@@ -363,6 +363,11 @@ const settings = definePluginSettings({
         description: "Whether to ignore messages by yourself",
         default: false,
     },
+    ignoreSelfEdits: {
+        type: OptionType.BOOLEAN,
+        description: "Whether to ignore edits by yourself",
+        default: false,
+    },
     ignoreUsers: {
         type: OptionType.STRING,
         description: "Comma-separated list of user IDs to ignore",
@@ -402,11 +407,17 @@ const settings = definePluginSettings({
             return !this.store.showEditDiffs;
         },
     },
+    ignoreSelfEdits: {
+        disabled() {
+            return this.store.ignoreSelf;
+        },
+    },
 });
 
 export default definePlugin({
     name: "MessageLogger",
     description: "Temporarily logs deleted and edited messages.",
+    tags: ["Chat", "Utility"],
     authors: [Devs.rushii, Devs.Ven, Devs.AutumnVN, Devs.Nickyux, Devs.Kyuuhachi, EquicordDevs.justjxke],
     dependencies: ["MessageUpdaterAPI"],
     isModified: true,
@@ -585,6 +596,7 @@ export default definePlugin({
             const {
                 ignoreBots,
                 ignoreSelf,
+                ignoreSelfEdits,
                 ignoreUsers,
                 ignoreChannels,
                 ignoreGuilds,
@@ -596,6 +608,7 @@ export default definePlugin({
             return (
                 (ignoreBots && message.author?.bot) ||
                 (ignoreSelf && message.author?.id === myId) ||
+                (ignoreSelfEdits && isEdit && message.author?.id === myId) ||
                 ignoreUsers.includes(message.author?.id) ||
                 ignoreChannels.includes(message.channel_id) ||
                 ignoreChannels.includes(
@@ -840,8 +853,8 @@ export default definePlugin({
                     replace: '$&$1.type==="MESSAGE_GROUP_DELETED"||',
                 },
                 {
-                    match: /(\i).type===\i\.\i\.MESSAGE_GROUP_BLOCKED\?.*?:/,
-                    replace: '$&$1.type==="MESSAGE_GROUP_DELETED"?$self.DELETED_MESSAGE_COUNT:',
+                    match: /(\i).type===\i\.\i\.MESSAGE_GROUP_BLOCKED\?(\i)=.*?:/,
+                    replace: '$&$1.type==="MESSAGE_GROUP_DELETED"?$2=$self.DELETED_MESSAGE_COUNT:',
                 },
             ],
             predicate: () => settings.store.collapseDeleted,
