@@ -21,6 +21,28 @@ import { filters, mapMangledModuleLazy, waitFor } from "@webpack";
 
 export const Menu = {} as t.Menu;
 
+// Relies on .name properties added by the MenuItemDemanglerAPI
+waitFor(m => m.name === "MenuCheckboxItem", (_, id) => {
+    // We have to do this manual require by ID because m in this case is the MenuCheckBoxItem instead of the entire module
+    const exports = wreq(id);
+
+    for (const exportKey in exports) {
+        // Some exports might have not been initialized yet due to circular imports, so try catch it.
+        try {
+            var exportValue = exports[exportKey];
+        } catch {
+            continue;
+        }
+
+        if (typeof exportValue === "function") {
+            console.log("[MenuDebug] Export found:", exportKey, exportValue.name);
+            if (exportValue.name.startsWith("Menu")) {
+                console.log("[MenuDebug] Found Menu export:", exportValue.name);
+                Menu[exportValue.name] = exportValue;
+            }
+        }
+    }
+});
 waitFor(filters.componentByCode('path:["empty"]'), m => Menu.Menu = m);
 waitFor(filters.componentByCode("SLIDER)", "handleSize:16"), m => Menu.MenuSliderControl = m);
 waitFor(filters.componentByCode(".SEARCH)", ".focus()", "query:"), m => Menu.MenuSearchControl = m);

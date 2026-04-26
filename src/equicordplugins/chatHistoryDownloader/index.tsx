@@ -273,6 +273,9 @@ const ChannelContextMenuPatch: NavContextMenuPatchCallback = (children, args) =>
     const channel = args?.channel ?? ChannelStore.getChannel(args?.channelId);
     if (!channel?.id) return;
 
+    console.log("[CHD Debug] Menu object:", Menu);
+    console.log("[CHD Debug] Menu.MenuItem:", Menu.MenuItem);
+
     const group = findGroupChildrenByChildId(["mark-channel-read", "mark-guild-read"], children, true) ?? children;
 
     group.push(

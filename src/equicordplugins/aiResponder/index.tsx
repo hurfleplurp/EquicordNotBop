@@ -13,7 +13,35 @@ import { sendMessage } from "@utils/discord";
 import { Logger } from "@utils/Logger";
 import { ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalProps, ModalRoot, openModal } from "@utils/modal";
 import definePlugin, { OptionType } from "@utils/types";
-import { ChannelStore, FluxDispatcher, MessageStore, React, SelectedChannelStore, TextInput, Toasts, UserStore, useState } from "@webpack/common";
+import { ChannelStore, Constants, FluxDispatcher, MessageStore, React, RestAPI, SelectedChannelStore, TextInput, Toasts, UserStore, useState } from "@webpack/common";
+
+import Plugins from "~plugins";
+
+function RefreshModelsButton() {
+    const [loading, setLoading] = useState(false);
+
+    const handleRefresh = async () => {
+        setLoading(true);
+        try {
+            await fetchVeniceModels();
+            showToast("Successfully refreshed model list", Toasts.Type.SUCCESS);
+        } catch (error) {
+            showToast("Failed to refresh models", Toasts.Type.FAILURE);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Button
+            onClick={handleRefresh}
+            disabled={loading}
+            style={{ marginBottom: 16 }}
+        >
+            {loading ? "Refreshing..." : "Refresh Models"}
+        </Button>
+    );
+}
 
 // Helper function to show toast notifications
 const showToast = (message: string, type: typeof Toasts.Type[keyof typeof Toasts.Type] = Toasts.Type.MESSAGE): void => {
@@ -38,6 +66,15 @@ const API_KEY_STORE_KEY = "AiResponder_apiKey";
 const SYSTEM_PROMPTS_STORE_KEY = "AiResponder_systemPrompts";
 const AUTO_REPLY_STORE_KEY = "AiResponder_autoReplyChannels";
 const CHAT_CONTEXTS_STORE_KEY = "AiResponder_chatContexts";
+const ALL_MESSAGES_SLIDER_VALUE = 1001;
+const MAX_PUBLIC_CHANNEL_HISTORY = 100;
+
+const DEFAULT_MODEL_OPTIONS = [
+    { label: "Venice Uncensored", value: "venice-uncensored", default: true },
+    { label: "Llama 3.3 70B", value: "llama-3.3-70b" },
+    { label: "Qwen 2.5 32B", value: "qwen-2.5-32b" },
+    { label: "Dolphin 2.9.2 Qwen2 72B", value: "dolphin-2.9.2-qwen2-72b" }
+] as const;
 
 let autoReplyChannels: Set<string> = new Set();
 const pendingReplies: Record<string, number> = {};
@@ -119,8 +156,11 @@ const settings = definePluginSettings({
         type: OptionType.SLIDER,
         description: "Maximum number of messages to include in context",
         default: 10,
-        markers: [5, 10, 15, 20, 25],
-        stickToMarkers: false
+        markers: [5, 10, 25, 50, 100, 1000, ALL_MESSAGES_SLIDER_VALUE],
+        stickToMarkers: true,
+        componentProps: {
+            onValueRender: (value: number) => value === ALL_MESSAGES_SLIDER_VALUE ? "All" : String(Math.trunc(value))
+        }
     },
     keybind: {
         type: OptionType.STRING,
@@ -130,12 +170,17 @@ const settings = definePluginSettings({
     model: {
         type: OptionType.SELECT,
         description: "AI model to use",
-        options: [
-            { label: "Qwen 235B", value: "qwen3-235b", default: true },
-            { label: "Qwen 4B", value: "qwen3-4b" },
-            { label: "Qwen 2.5 QWQ 32B", value: "qwen-2.5-qwq-32b" },
-            { label: "Venice Uncensored", value: "venice-uncensored" }
-        ]
+        options: DEFAULT_MODEL_OPTIONS
+    },
+    modelOptionsRefreshToggle: {
+        type: OptionType.BOOLEAN,
+        description: "Internal setting used to refresh settings UI",
+        default: false,
+        hidden: true
+    },
+    refreshModels: {
+        type: OptionType.COMPONENT,
+        component: RefreshModelsButton
     },
     hideThinkingBlocks: {
         type: OptionType.BOOLEAN,
@@ -170,6 +215,65 @@ async function getApiKey(): Promise<string | null> {
 
 async function setApiKey(key: string): Promise<void> {
     await DataStore.set(API_KEY_STORE_KEY, key);
+    // Refresh models when API key is set
+    await fetchVeniceModels();
+}
+
+async function fetchVeniceModels(): Promise<void> {
+    try {
+        const apiKey = await getApiKey();
+        if (!apiKey) return;
+
+        logger.log("Fetching available models from Venice API...");
+        const response = await fetch("https://api.venice.ai/api/v1/models", {
+            headers: {
+                "Authorization": `Bearer ${apiKey}`
+            }
+        });
+
+        if (!response.ok) {
+            logger.error(`Failed to fetch models: ${response.status} ${response.statusText}`);
+            return;
+        }
+
+        const data = await response.json();
+        if (!data.data || !Array.isArray(data.data)) {
+            logger.error("Invalid model data received from Venice API");
+            return;
+        }
+
+        const models = data.data
+            .filter((m: any) => typeof m?.id === "string" && m.id.length > 0)
+            .sort((a: any, b: any) => (b.created ?? 0) - (a.created ?? 0)); // Sort by newest when available
+
+        const modelOptions = models.map((m: any) => ({
+            label: m.id, // Use ID as label for now, formatted nicely if possible
+            value: m.id
+        }));
+
+        const nextModelOptions = modelOptions.length
+            ? modelOptions
+            : [...DEFAULT_MODEL_OPTIONS];
+
+        // Update the settings definition
+        // @ts-ignore - We're mutually modifying the settings definition at runtime
+        settings.def.model.options = nextModelOptions;
+
+        const plugin = Plugins.AiResponder as any;
+        if (plugin?.options?.model) {
+            plugin.options.model.options = nextModelOptions;
+        }
+
+        if (!nextModelOptions.some((option: any) => option.value === settings.store.model)) {
+            settings.store.model = nextModelOptions[0]?.value ?? DEFAULT_MODEL_OPTIONS[0].value;
+        }
+
+        settings.store.modelOptionsRefreshToggle = !settings.store.modelOptionsRefreshToggle;
+        logger.log(`Updated model list with ${nextModelOptions.length} models from Venice API`);
+
+    } catch (error) {
+        logger.error("Error fetching Venice models:", error);
+    }
 }
 
 function ApiKeyModal({ modalProps, initialValue, onSubmit }: { modalProps: ModalProps; initialValue: string; onSubmit: (value: string | null) => void; }) {
@@ -284,12 +388,9 @@ function sampleDelayMs(): number {
 // Function to start typing indicators
 function startTypingIndicator(channelId: string): number | undefined {
     if (!ChannelStore.getChannel(channelId)) return;
-    // Start typing
-    FluxDispatcher.dispatch({
-        type: "TYPING_START",
-        channelId,
-        userId: UserStore.getCurrentUser().id
-    });
+
+    // Start typing actually sending to discord
+    RestAPI.post({ url: Constants.Endpoints.TYPING(channelId) }).catch(() => { });
 
     // Set up interval to keep typing active
     const typingInterval = setInterval(() => {
@@ -302,12 +403,8 @@ function startTypingIndicator(channelId: string): number | undefined {
             return;
         }
 
-        // Keep typing active
-        FluxDispatcher.dispatch({
-            type: "TYPING_START",
-            channelId,
-            userId: UserStore.getCurrentUser().id
-        });
+        // Keep typing active actually sending to discord
+        RestAPI.post({ url: Constants.Endpoints.TYPING(channelId) }).catch(() => { });
     }, TYPING_INDICATOR_INTERVAL) as unknown as number;
 
     return typingInterval;
@@ -352,16 +449,16 @@ async function autoReply(channelId: string) {
             pendingResponses[channelId].typingInterval = typingInterval;
         }
 
-        // Stop typing indicators if they're still active
+        // Calculate typing delay based on text length
+        const typingDelay = calculateTypingDelay(responseText);
+
+        // Wait the typing delay BEFORE stopping the typing indicator
+        await new Promise(resolve => setTimeout(resolve, typingDelay));
+
+        // Stop typing indicators now that we're pretending to be done
         if (pendingResponses[channelId]) {
             stopTypingIndicator(channelId);
         }
-
-        if (!responseText) return;
-
-        // Calculate typing delay and wait
-        const typingDelay = calculateTypingDelay(responseText);
-        await new Promise(resolve => setTimeout(resolve, typingDelay));
 
         // Send the message using the available method
         try {
@@ -398,10 +495,23 @@ function handleIncomingMessage({ message }: { message: any; }) {
 }
 
 async function getChatHistory(channelId: string, limit: number): Promise<any[]> {
+    const channel = ChannelStore.getChannel(channelId);
+    let effectiveLimit = limit;
+
+    // Handle "All" logic
+    if (limit === ALL_MESSAGES_SLIDER_VALUE) {
+        if (channel?.type === 1 || channel?.type === 3) { // DM or Group DM
+            effectiveLimit = MessageStore.getMessages(channelId)._array?.length ?? 0;
+        } else {
+            // Public channel - cap at 100
+            effectiveLimit = MAX_PUBLIC_CHANNEL_HISTORY;
+        }
+    }
+
     const messages = MessageStore.getMessages(channelId)._array || [];
     return messages
         .filter(msg => !msg.deleted && msg.content)
-        .slice(-limit)
+        .slice(-effectiveLimit)
         .map(msg => ({
             role: msg.author.id === UserStore.getCurrentUser().id ? "assistant" : "user",
             content: `${msg.author.username}: ${msg.content}`,
@@ -1209,6 +1319,8 @@ export default definePlugin({
         document.addEventListener("keydown", handleKeyDown);
         FluxDispatcher.subscribe("MESSAGE_CREATE", handleIncomingMessage);
         getAutoReplyChannels().then(set => { autoReplyChannels = set; });
+        // Fetch models in background
+        fetchVeniceModels();
         logger.info("AiResponder plugin started. Use the chat button, keybind or enable auto-reply for DMs!");
     },
 

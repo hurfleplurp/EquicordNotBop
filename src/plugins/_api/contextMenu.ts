@@ -39,12 +39,32 @@ export default definePlugin({
             noWarn: true,
             replacement: [
                 {
-                    match: /navId:(?=.+?([,}].*?\)))/g,
-                    replace: (m, rest, ...args) => {
-                        if (rest.match(/}=.+/)) return m;
-                        const src = args[1]?.slice(Math.max(0, +args[0] - 2000), +args[0]);
-                        if (src && Math.max(src.lastIndexOf("PureComponent{"), src.lastIndexOf("Component{")) > src.lastIndexOf("function")) return m;
-                        return `contextMenuAPIArguments:typeof arguments!=='undefined'?arguments:[],${m}`;
+                    match: /navId:\s*(["'])(.+?)\1(?=[\s\S]+?([,}][\s\S]*?\)))/g,
+                    replace: (m, quote, navId, rest) => {
+                        const destructuringMatch = rest.match(/}=.+/);
+                        if (destructuringMatch == null) {
+                            // Only inject arguments for known safe context menus to avoid "arguments is not allowed in class field initializer" syntax error
+                            // "expression-picker" is for the sticker picker / emoji picker
+                            const SafeNavIds = [
+                                "textarea-context",
+                                "channel-context",
+                                "message", // "message" is sometimes used without -context suffix
+                                "message-context",
+                                "user-context",
+                                "guild-context",
+                                "thread-context",
+                                "expression-picker",
+                                "image-context",
+                                "gdm-context"
+                            ];
+
+                            if (SafeNavIds.includes(navId) || SafeNavIds.some(safe => navId.startsWith(safe))) {
+                                return `contextMenuAPIArguments:typeof arguments!=='undefined'?arguments:[],${m}`;
+                            }
+
+                            return `contextMenuAPIArguments:[],${m}`;
+                        }
+                        return m;
                     }
                 }
             ]
