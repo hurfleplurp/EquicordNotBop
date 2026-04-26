@@ -38,6 +38,7 @@ import {
     RelationshipStore,
     SelectedChannelStore,
     SelectedGuildStore,
+    ThemeStore,
     useCallback,
     useEffect,
     useLayoutEffect,
@@ -57,6 +58,14 @@ import {
 } from "./store";
 
 const cl = classNameFactory("vc-sidebar-chat-");
+
+const themeParents: Record<string, string> = { darker: "dark", midnight: "dark" };
+function getThemeClasses(theme: string) {
+    const parent = themeParents[theme];
+    return parent
+        ? `theme-${parent} theme-${theme} images-${parent}`
+        : `theme-${theme} images-${theme}`;
+}
 
 const HeaderBar = findComponentByCodeLazy("toolbarClassName:", "}),onDoubleClick:");
 const ForumView = findComponentByCodeLazy("sidebarState");
@@ -81,7 +90,6 @@ const Chat = findComponentByCodeLazy("filterAfterTimestamp:", "chatInputType");
 const Resize = findComponentByCodeLazy("sidebarType:", "RESIZE_HANDLE_WIDTH)");
 const ChannelHeader = findComponentByCodeLazy(".GUILD_ANNOUNCEMENT", "`channel-");
 const PopoutWindow = findComponentByCodeLazy("Missing guestWindow reference");
-const FullChannelView = findComponentByCodeLazy(/showFollowButton:\i\?\.type===/);
 const WanderingCubesLoading = findComponentByCodeLazy('="wanderingCubes"');
 
 const ChatInputTypes = findByPropsLazy("FORM", "NORMAL");
@@ -326,11 +334,16 @@ export default definePlugin({
                     replace: "const vc_SidebarChat=$self.renderSidebar();$&"
                 },
                 {
-                    match: /return(\(0,\i\.jsxs?\)\(\i\.\i,{}\))}/,
+                    match: /return(\(0,\i\.jsxs?\)\(\i,{}\))}/,
                     replace: "return [$1, vc_SidebarChat]}"
                 },
                 {
-                    match: /(case \i\.\i.+?return)(.+?);(?=.+?params\.messageId)(?<=guild_products".+?)/g,
+                    match: /(?<=guild_products.{0,1600})(case \i\.\i.{0,50}return)(.+?\}\));(?=.+?params\.messageId)/g,
+                    replace: "$1[$2, vc_SidebarChat];",
+                    predicate: () => settings.store.patchCommunity
+                },
+                {
+                    match: /(case \i\.\i\.GAME_SERVERS:.{0,50}\.CHANNEL.{0,25}return)(.*?);/,
                     replace: "$1[$2, vc_SidebarChat];",
                     predicate: () => settings.store.patchCommunity
                 }
@@ -529,6 +542,41 @@ const RenderPopout = ErrorBoundary.wrap(({ channel, name, windowKey }: { channel
         });
     }, [channel?.id]);
 
+    const theme = useStateFromStores([ThemeStore], () => ThemeStore?.theme ?? "dark");
+    const guild = useStateFromStores([GuildStore], () => channel.guild_id ? GuildStore.getGuild(channel.guild_id) : null, [channel.guild_id]);
+
+    const [View, setViewComponent] = useState<React.ReactNode>(null);
+
+    useEffect(() => {
+        if (!channel) return;
+
+        if (channel.isForumLikeChannel()) {
+            requireForumView().then(() => {
+                setViewComponent(
+                    <ForumView
+                        channel={channel}
+                        guild={guild}
+                        sidebarState={null}
+                    />
+                );
+            });
+
+            setViewComponent(
+                <div className={ChatClasses.loader}>
+                    <WanderingCubesLoading />
+                </div>
+            );
+        } else {
+            setViewComponent(
+                <Chat
+                    channel={channel}
+                    guild={guild}
+                    chatInputType={ChatInputTypes.NORMAL}
+                />
+            );
+        }
+    }, [channel, guild]);
+
     return (
         <PopoutWindow
             withTitleBar
@@ -537,8 +585,8 @@ const RenderPopout = ErrorBoundary.wrap(({ channel, name, windowKey }: { channel
             channelId={channel.id}
             contentClassName={cl("popout")}
         >
-            <div className={cl("window")}>
-                <FullChannelView providedChannel={channel} />
+            <div className={`${getThemeClasses(theme)} ${cl("window")}`}>
+                {View}
             </div>
         </PopoutWindow>
     );

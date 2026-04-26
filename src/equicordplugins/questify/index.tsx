@@ -1399,6 +1399,14 @@ export default definePlugin({
 
     patches: [
         {
+            // Needed for GuildlessServerListItemComponent component in components.tsx
+            find: "=\"DOWNLOAD_APPS\";function",
+            replacement: {
+                match: /(?<=function\(\i,\i,\i\){\i.\i\(\i,{)(?=.{0,25000}?ariaHidden:!0,asContainer:!\i,children:\i}\)}var \i=\i\(\d+\);let (\i)=\i.forwardRef\(function)/,
+                replace: "GuildlessServerListItemComponent:()=>$1,"
+            }
+        },
+        {
             // Hides Quests tab in the Discovery page.
             find: "GLOBAL_DISCOVERY_SIDEBAR},",
             replacement: [
@@ -1649,8 +1657,13 @@ export default definePlugin({
                 },
                 {
                     // Encourages banners to load quicker if the setting is enabled.
-                    match: /(warningHints:\i,)isVisibleInViewport:(\i)/,
-                    replace: "$1isVisibleInViewport:$self.shouldPreloadQuestAssets()?true:$2"
+                    match: /(hideAssets:)(!\i)/,
+                    replace: "$1$self.shouldPreloadQuestAssets()?!1:$2"
+                },
+                {
+                    // Encourages banners to load quicker if the setting is enabled.
+                    match: /(showPlaceholder:)(!\i)/,
+                    replace: "$1$self.shouldPreloadQuestAssets()?!1:$2"
                 },
                 {
                     // Encourages reward icons to load quicker if the setting is enabled.
@@ -1674,8 +1687,8 @@ export default definePlugin({
             // Adds the "Questify" sort option to the sort enum.
             find: "SUGGESTED=\"suggested\",",
             replacement: {
-                match: /return ((\i).SUGGESTED="suggested",)/,
-                replace: "return $2.QUESTIFY=\"questify\",$1"
+                match: /(\(\((\i)=\{\}\))(.SUGGESTED="suggested",)/,
+                replace: "$1.QUESTIFY=\"questify\",$2$3"
             }
         },
         {
@@ -1694,8 +1707,12 @@ export default definePlugin({
                     // Run Questify's sort function every time due to hook requirements but return
                     // early if not applicable. If the sort method is set to "Questify", replace the
                     // Quests with the sorted ones. Also, setup a trigger to rerender the memo.
-                    match: /(return \i.useMemo\(\(\)=>{)(?=if\(0===(\i).length\))/,
-                    replace: "const questRerenderTrigger=$self.useQuestRerender();const questifySorted=$self.sortQuests($2,arguments[1].sortMethod!==\"questify\");$1if(arguments[1].sortMethod===\"questify\"){$2=questifySorted;};"
+                    match: /(?<=quests:(\i).{0,150}"use_filtered_quests".{0,25}\i\.id,\i\]\)\)),/,
+                    replace: ";const questRerenderTrigger=$self.useQuestRerender();const questifySorted=$self.sortQuests($1,arguments[1].sortMethod!==\"questify\");let "
+                },
+                {
+                    match: /(?=if\(0===(\i).length\).{0,100}\.sortMethod&&\i\.current)/,
+                    replace: "if(arguments[1].sortMethod===\"questify\"){$1=questifySorted;};"
                 },
                 {
                     // Account for Quest status changes.
@@ -1704,7 +1721,7 @@ export default definePlugin({
                 },
                 {
                     // If we already applied Questify's sort, skip further sorting.
-                    match: /(?<=sortMethod:(\i).{0,115}?return )((\i).sort)/,
+                    match: /(?<=\{sortMethod:(\i).*?return )((\i).sort)/,
                     replace: "$1===\"questify\"?$3:$2"
                 },
                 {
@@ -1815,7 +1832,7 @@ export default definePlugin({
             find: ".ACCEPT_QUEST),",
             replacement: [
                 {
-                    match: /(?=let{quest:)/,
+                    match: /(?=let{quest:)/g,
                     replace: "const questifyText=$self.getQuestUnacceptedButtonText(arguments[0].quest)??$self.getQuestAcceptedButtonText(arguments[0].quest);"
                 },
                 {
